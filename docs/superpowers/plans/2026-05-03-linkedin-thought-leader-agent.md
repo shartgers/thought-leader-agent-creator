@@ -145,33 +145,10 @@ Do not modify them to bypass workflow gates.
 - `posted`: published to LinkedIn
 ```
 
-- [ ] **Step 5: Write `.gitignore`**
-
-```
-# Credentials and secrets — never commit
-.env
-credentials.json
-token.json
-
-# Python
-__pycache__/
-*.py[cod]
-.venv/
-*.egg-info/
-
-# Temp files
-.tmp/
-logs/
-
-# OS
-.DS_Store
-Thumbs.db
-```
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add execution/__init__.py .env.example requirements.txt CLAUDE.md .gitignore
+git add execution/__init__.py .env.example requirements.txt CLAUDE.md
 git commit -m "chore: scaffold repo structure and project config"
 ```
 
