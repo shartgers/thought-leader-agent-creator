@@ -15,6 +15,7 @@ __pycache__/
 
 # Temp files
 .tmp/
+logs/
 
 # Git worktrees
 .worktrees/
