@@ -1,0 +1,9 @@
+# Your profile — set by the setup skill during onboarding.
+# Edit directly or re-run /setup to update.
+name: ""
+role: ""
+company: ""
+industry: ""
+linkedin_urn: ""        # numeric person ID (e.g. 12345678), NOT the full URN
+preferred_post_time: "08:30"
+timezone: "Europe/Amsterdam"

@@ -1,0 +1,9 @@
+# Content themes — set by the setup skill during onboarding.
+# Edit directly or re-run /setup to update.
+themes:
+  - name: "Theme 1"
+    description: "Replace with your first content theme"
+  - name: "Theme 2"
+    description: "Replace with your second content theme"
+  - name: "Theme 3"
+    description: "Replace with your third content theme"
