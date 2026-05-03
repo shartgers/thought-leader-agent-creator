@@ -16,6 +16,9 @@ __pycache__/
 # Temp files
 .tmp/
 
+# Git worktrees
+.worktrees/
+
 # OS
 .DS_Store
 Thumbs.db
