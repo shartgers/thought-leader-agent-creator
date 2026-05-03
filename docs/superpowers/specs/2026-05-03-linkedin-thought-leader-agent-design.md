@@ -252,19 +252,30 @@ Ported from original. Parameterized to read `GOOGLE_SHEET_ID` from `.env`. Key f
 
 ### `linkedin_client.py`
 Ported from original. Reads `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN` from `.env`. Key functions:
-- `post_text(text)` — posts via ugcPosts API, returns post URN or None
+- `post_text(text)` — posts via ugcPosts API; on success returns the post URN string (e.g. `urn:li:ugcPost:7123456789`); on failure returns None
 - `build_post_text(title, text)` — concatenates title + body for the API call
+- `urn_to_url(post_urn)` — converts a ugcPost URN to a shareable URL: `https://www.linkedin.com/feed/update/<urn>/`
+
+Both `post-article` and `publish_today.py` must call `urn_to_url()` on the returned URN to populate `published_url` in the sheet.
 
 ### `llm_content_gen.py`
-Ported from original. Updated to accept `brand_voice`, `themes`, and `role` as inputs rather than reading hardcoded prompts. Key function:
+Rewritten from original (original read hardcoded prompt files). Accepts all context as parameters. Key function:
 - `generate_draft(about, brand_voice, themes, role)` → returns `{title, text, image_prompt}`
+
+Prompt structure:
+
+System prompt injects `role`, full `brand_voice.md` contents, and the 3 `themes` as context. It instructs the model to write 150-300 words, open with a hook (no "I" opener), include one clear insight, close with a question or call to action, and respond with JSON only: `{"title": "...", "text": "...", "image_prompt": "..."}`.
+
+User message: `Write a LinkedIn article about this idea: {about}`
+
+On JSON parse failure the function retries once before raising an exception.
 
 ### `publish_today.py`
 Ported from original. Standalone script called by the CronCreate routine:
-1. Calls `get_today_scheduled_post()` — if None, exits cleanly
-2. Calls `post_text(build_post_text(title, text))`
-3. On success: calls `update_row` with `status=posted`, `date_posted`, `published_url`
-4. On failure: logs error and exits with non-zero code
+1. Calls `get_today_scheduled_post()` — if None, logs "No post scheduled for today" and exits cleanly
+2. Calls `post_text(build_post_text(title, text))` — returns post URN or None
+3. On success: derives `published_url` via `urn_to_url(post_urn)`; calls `update_row` with `status=posted`, `date_posted`, `published_url`
+4. On failure: logs error verbatim and exits with non-zero code
 
 ---
 
@@ -335,7 +346,7 @@ timezone: "Europe/Amsterdam"
 ├── tests/
 │   └── (unit tests for execution scripts)
 ├── .env.example
-├── .gitignore              ← excludes .env, credentials.json, token.json
+├── .gitignore              ← excludes .env, credentials.json, token.json, app-backup/
 ├── requirements.txt
 └── README.md
 ```
