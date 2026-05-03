@@ -7,7 +7,7 @@ Tab name: "LinkedIn Posts"
 """
 
 import os
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
@@ -17,6 +17,10 @@ from googleapiclient.errors import HttpError
 from dotenv import load_dotenv
 
 load_dotenv()
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_TOKEN_PATH = os.path.join(_REPO_ROOT, 'token.json')
+_CREDENTIALS_PATH = os.path.join(_REPO_ROOT, 'credentials.json')
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SPREADSHEET_ID = os.getenv('GOOGLE_SHEET_ID')
@@ -28,11 +32,22 @@ POSTS_COLUMNS = [
 ]
 
 
+def _col_index_to_letter(n):
+    """Convert a 0-based column index to a spreadsheet column letter (A, B, ..., Z, AA, AB, ...)."""
+    result = ''
+    while True:
+        result = chr(ord('A') + n % 26) + result
+        n = n // 26 - 1
+        if n < 0:
+            break
+    return result
+
+
 def get_service():
     """Authenticates and returns a Google Sheets API service instance."""
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists(_TOKEN_PATH):
+        creds = Credentials.from_authorized_user_file(_TOKEN_PATH, SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -40,17 +55,17 @@ def get_service():
                 creds.refresh(Request())
             except RefreshError:
                 print("WARNING: OAuth token expired. Re-authenticating.")
-                os.remove('token.json')
+                os.remove(_TOKEN_PATH)
                 creds = None
 
         if not creds or not creds.valid:
-            if not os.path.exists('credentials.json'):
+            if not os.path.exists(_CREDENTIALS_PATH):
                 print("ERROR: credentials.json not found. Run setup skill first.")
                 return None
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(_CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=OAUTH_PORT, prompt='consent', open_browser=False)
 
-        with open('token.json', 'w') as token:
+        with open(_TOKEN_PATH, 'w') as token:
             token.write(creds.to_json())
 
     try:
@@ -160,11 +175,13 @@ def update_row(tab_name, row_number, updates):
         for col_name, value in updates.items():
             if col_name in header:
                 col_idx = header.index(col_name)
-                col_letter = chr(ord('A') + col_idx)
+                col_letter = _col_index_to_letter(col_idx)
                 data.append({
                     'range': f"'{tab_name}'!{col_letter}{row_number}",
                     'values': [[value]]
                 })
+            else:
+                print(f"WARNING: Column '{col_name}' not found in {tab_name} header. Skipping.")
 
         if data:
             service.spreadsheets().values().batchUpdate(
@@ -197,7 +214,6 @@ def get_schedule(days=14):
     schedule_slots: list of {date, weekday, post} dicts
     unscheduled_ready: list of ready rows with no scheduled_date
     """
-    from datetime import timedelta
     today = date.today()
     rows = get_rows('LinkedIn Posts')
 
@@ -232,13 +248,19 @@ def set_scheduled_date(row_number, target_date, shift=False):
     If shift=True, bumps all later-scheduled posts forward by one day.
     """
     if shift and target_date:
-        from datetime import timedelta
         rows = get_rows('LinkedIn Posts')
-        for row in rows:
-            existing = row.get('scheduled_date', '').strip()
-            if existing and existing >= target_date and row['_row_number'] != row_number:
-                new_date = (date.fromisoformat(existing) + timedelta(days=1)).isoformat()
-                update_row('LinkedIn Posts', row['_row_number'], {'scheduled_date': new_date})
+        conflicting = sorted(
+            [r for r in rows
+             if r.get('scheduled_date', '').strip() >= target_date
+             and r['_row_number'] != row_number
+             and r.get('scheduled_date', '').strip()],
+            key=lambda r: r['scheduled_date'],
+            reverse=True
+        )
+        for row in conflicting:
+            existing = row['scheduled_date'].strip()
+            new_date = (date.fromisoformat(existing) + timedelta(days=1)).isoformat()
+            update_row('LinkedIn Posts', row['_row_number'], {'scheduled_date': new_date})
 
     return update_row('LinkedIn Posts', row_number, {'scheduled_date': target_date})
 

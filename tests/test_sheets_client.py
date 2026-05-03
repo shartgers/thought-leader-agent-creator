@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from datetime import date
 from execution import sheets_client
+from execution.sheets_client import POSTS_COLUMNS
 
 
 def test_get_rows_returns_dicts_with_row_number(mock_sheets_service):
@@ -51,9 +52,9 @@ def test_append_idea_builds_correct_row(mock_sheets_service):
     call_args = mock_sheets_service.spreadsheets().values().append.call_args
     body = call_args.kwargs['body']
     row = body['values'][0]
-    assert 'Test idea' in row
-    assert 'Manual' in row
-    assert 'new' in row
+    assert row[POSTS_COLUMNS.index('about')] == 'Test idea'
+    assert row[POSTS_COLUMNS.index('source')] == 'Manual'
+    assert row[POSTS_COLUMNS.index('status')] == 'new'
 
 
 def test_update_row_calls_batch_update(mock_sheets_service):
