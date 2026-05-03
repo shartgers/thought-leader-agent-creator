@@ -115,15 +115,29 @@ The `review → ready` transition is **intentionally manual**. This is a feature
 3. Collaboratively identify **3 content themes** — the skill suggests themes based on role/industry, the colleague refines them. Themes define what they post about consistently (e.g. "AI in operations", "leadership lessons", "sustainable logistics")
 4. Write `config/profile.yaml` and `config/themes.yaml`
 5. Copy `config/brand_voice.md` from the default template — invite the colleague to review and edit it
-6. **Google Sheets check:**
-   - Look for `GOOGLE_SHEET_ID` in `.env` — if found, skip creation
-   - If not found: create a new Google Sheet via Google Drive MCP with the correct columns and tab name, output the sheet URL, and instruct the colleague to add the ID to `.env`
+6. **Google Cloud / Sheets setup:**
+   - Explain that a Google Cloud project and OAuth credentials are required for Sheets access
+   - Walk through these steps if `credentials.json` does not exist:
+     1. Go to [console.cloud.google.com](https://console.cloud.google.com) → create a new project
+     2. Enable the **Google Sheets API** and **Google Drive API**
+     3. Go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**
+     4. Choose **Desktop app**, download the JSON, and save it as `credentials.json` in the repo root
+     5. Run `python execution/sheets_client.py` once — this opens a browser auth flow and generates `token.json`
+   - Check for `GOOGLE_SHEET_ID` in `.env`:
+     - If found: display the sheet URL derived from the ID and ask "Is this your sheet? (yes / no)"
+       - On **yes**: proceed with the existing sheet
+       - On **no**: create a new Google Sheet via Google Drive MCP with the correct tab name and columns; display the URL; instruct the colleague to update `GOOGLE_SHEET_ID` in `.env`
+     - If not found: create a new Google Sheet via Google Drive MCP; display the URL; instruct the colleague to add `GOOGLE_SHEET_ID` to `.env`
+   - **CRITICAL:** Never silently use an existing `GOOGLE_SHEET_ID` without explicit confirmation from the colleague. Always ask.
 7. **LinkedIn credentials check:**
    - Look for `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN` in `.env`
-   - If missing: walk through the LinkedIn Developer App OAuth flow step by step, including how to create the app, request the `w_member_social` scope, and retrieve the access token and person URN
+   - If missing: walk through the LinkedIn Developer App OAuth flow step by step:
+     1. Go to [linkedin.com/developers](https://linkedin.com/developers) → create a new app
+     2. Request the `w_member_social` and `r_liteprofile` OAuth scopes
+     3. Complete the OAuth 2.0 flow to retrieve the access token
+     4. Run `python execution/get_linkedin_id.py` to retrieve and confirm the person URN
+     5. Add both values to `.env`
 8. Confirm setup is complete. Tell the colleague their next step: run `capture-ideas` to add their first ideas.
-
-**CRITICAL:** The setup skill must **never use an existing `GOOGLE_SHEET_ID`** found in the environment if the colleague has not confirmed it is theirs. Always prompt the user to confirm or create fresh.
 
 ---
 
@@ -213,7 +227,8 @@ The `review → ready` transition is **intentionally manual**. This is a feature
 7. **CronCreate:** If no daily routine exists yet, create one:
    - Schedule: daily at **08:15 Europe/Amsterdam** (15 min before post time)
    - Timezone: `Europe/Amsterdam` (IANA, DST-aware)
-   - Prompt: *"Run publish_today.py. Check for a post scheduled for today with status=ready. If found, publish it to LinkedIn and update the sheet. If not found, log 'No post scheduled for today' and exit cleanly."*
+   - Prompt: *"Navigate to the repo root, then execute: `python execution/publish_today.py`. The script checks the Google Sheet for a post with today's `scheduled_date` and `status=ready`. If found, it publishes to LinkedIn and updates the sheet. If not found, it logs 'No post scheduled for today' and exits cleanly. Report the script's full output."*
+   - The cron agent resolves the repo root from the project directory set at session start
 8. Confirm: "Schedule saved. The daily routine will check and post automatically."
 
 **Cron behaviour:**
@@ -308,7 +323,8 @@ timezone: "Europe/Amsterdam"
 │   ├── sheets_client.py
 │   ├── linkedin_client.py
 │   ├── llm_content_gen.py
-│   └── publish_today.py
+│   ├── publish_today.py
+│   └── get_linkedin_id.py  ← retrieves person URN during setup
 ├── config/
 │   ├── brand_voice.md      ← default template, colleague edits
 │   ├── themes.yaml         ← written by setup skill

@@ -1,0 +1,21 @@
+# Credentials and secrets — never commit
+.env
+credentials.json
+token.json
+
+# Backup and input directories — not part of the shareable repo
+app-backup/
+input/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Temp files
+.tmp/
+
+# OS
+.DS_Store
+Thumbs.db
