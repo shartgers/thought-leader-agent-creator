@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ls -1 *.py *.txt *.md *.example)",
+      "Bash(ls -la .env*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(gh repo *)",
+      "Bash(git push *)",
+      "Bash(git *)"
+    ]
+  }
+}
