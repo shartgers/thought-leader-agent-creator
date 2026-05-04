@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CLAUDE_API_KEY = os.getenv('CLAUDE_API_KEY')
-MODEL = 'claude-sonnet-4-6'
+MODEL = 'claude-sonnet-4-6'  # single place to update if Anthropic changes the model ID
 
 
 def _build_system_prompt(brand_voice, themes, role):

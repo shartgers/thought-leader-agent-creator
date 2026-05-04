@@ -1,6 +1,6 @@
-# LinkedIn Thought Leader Agent
+# linkedin-publish-agent
 
-This repo helps you consistently publish LinkedIn thought leadership articles.
+This repo supports Xomnia thought leaders who want to automate the creation and publication of articles on LinkedIn.
 It uses Claude skills + Python execution scripts + Google Sheets.
 
 ## First time? Run the setup skill

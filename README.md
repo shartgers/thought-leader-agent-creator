@@ -1,6 +1,6 @@
-# LinkedIn Thought Leader Agent
+# linkedin-publish-agent
 
-A Claude-powered pipeline for publishing consistent LinkedIn thought leadership articles. Clone it, run the setup skill, and you're posting.
+A Claude-powered pipeline for Xomnia thought leaders who want to automate the creation and publication of articles on LinkedIn. Clone it, run the setup skill, and you're posting.
 
 ## What it does
 
@@ -21,8 +21,8 @@ A Claude-powered pipeline for publishing consistent LinkedIn thought leadership 
 
 ```bash
 # 1. Clone the repo
-git clone <repo-url>
-cd thought-leader-agent
+git clone https://github.com/shartgers/linkedin-publish-agent.git
+cd linkedin-publish-agent
 
 # 2. Install Python dependencies
 python -m venv .venv

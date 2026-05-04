@@ -8,6 +8,7 @@ Tab name: "LinkedIn Posts"
 
 import os
 from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
@@ -18,6 +19,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_TZ = ZoneInfo('Europe/Amsterdam')
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _TOKEN_PATH = os.path.join(_REPO_ROOT, 'token.json')
 _CREDENTIALS_PATH = os.path.join(_REPO_ROOT, 'credentials.json')
@@ -200,7 +202,7 @@ def get_today_scheduled_post():
     Returns the single row with scheduled_date == today and status == 'ready'.
     Returns None if no such row exists.
     """
-    today = date.today().isoformat()
+    today = datetime.now(_TZ).date().isoformat()
     rows = get_rows('LinkedIn Posts', status_filter='ready')
     for row in rows:
         if row.get('scheduled_date', '').strip() == today:
@@ -214,7 +216,7 @@ def get_schedule(days=14):
     schedule_slots: list of {date, weekday, post} dicts
     unscheduled_ready: list of ready rows with no scheduled_date
     """
-    today = date.today()
+    today = datetime.now(_TZ).date()
     rows = get_rows('LinkedIn Posts')
 
     scheduled_by_date = {}
