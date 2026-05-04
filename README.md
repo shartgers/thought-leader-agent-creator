@@ -11,11 +11,12 @@ A Claude-powered pipeline for Xomnia thought leaders who want to automate the cr
 
 ## Prerequisites
 
-- [Claude Code](https://claude.ai/code) installed
+- [Claude Code](https://claude.ai/code) installed (or Cursor with this repo)
 - Python 3.11+
 - A Google account (for Sheets)
 - A LinkedIn Developer app ([guide in setup skill](skills/setup.md))
-- An [Anthropic API key](https://console.anthropic.com)
+
+Optional: an [Anthropic API key](https://console.anthropic.com) only if you want `execution/llm_content_gen.generate_draft()` to call Claude from Python (automation/CI). Normal `/create-articles` flow uses the host agent and does not need it.
 
 ## Getting Started
 
