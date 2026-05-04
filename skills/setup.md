@@ -82,16 +82,47 @@ This opens a browser window. When you see **"Google hasn't verified this app"**,
 
 ## Step 5: Google Sheet Setup
 
-Use the Google Drive MCP to create a new Google Sheet:
-- Name it: `LinkedIn Posts`
-- Create a tab called `LinkedIn Posts` with these headers in row 1 (in this exact order):
-  `source, about, title, text, image_prompt, status, scheduled_date, date_added, date_textgen, published_url, date_posted`
+First write a placeholder to `.env` so the import doesn't fail:
+```
+GOOGLE_SHEET_ID=placeholder
+```
 
-After creating the sheet, write the sheet ID to `.env`:
+Then run this Python snippet via the Bash tool to create the sheet under the same Google account as the OAuth token:
+
+```python
+python -c "
+import sys; sys.path.insert(0, '.')
+from execution.sheets_client import get_service
+
+HEADERS = ['source','about','title','text','image_prompt','status','scheduled_date',
+           'date_added','date_textgen','published_url','date_posted']
+
+svc = get_service()
+body = {
+    'properties': {'title': 'LinkedIn Posts'},
+    'sheets': [{'properties': {'title': 'LinkedIn Posts'}}]
+}
+result = svc.spreadsheets().create(body=body).execute()
+sheet_id = result['spreadsheetId']
+print('Sheet ID:', sheet_id)
+print('URL:', result['spreadsheetUrl'])
+
+svc.spreadsheets().values().update(
+    spreadsheetId=sheet_id,
+    range=\"'LinkedIn Posts'!A1\",
+    valueInputOption='RAW',
+    body={'values': [HEADERS]}
+).execute()
+print('Headers written.')
+"
 ```
-GOOGLE_SHEET_ID=<id>
+
+Copy the printed Sheet ID and update `.env`:
 ```
-The ID is the part of the sheet URL between `/d/` and `/edit`. Share the URL with the colleague so they can bookmark it.
+GOOGLE_SHEET_ID=<id from output>
+```
+
+Share the sheet URL with the colleague so they can bookmark it.
 
 ## Step 6: LinkedIn Credentials
 
@@ -118,7 +149,10 @@ Guide the colleague to:
 2. **App name**: `Xomnia Publish Agent` (LinkedIn does not allow the word "LinkedIn" in app names)
 3. **LinkedIn Page**: paste the company page URL from step 6a (or type to search by name)
 4. Accept the terms and click **Create app**
-5. Go to the **Products** tab → request **Share on LinkedIn** (grants `w_member_social`)
+5. Go to the **Products** tab → request both:
+   - **Share on LinkedIn** (grants `w_member_social`)
+   - **Sign In with LinkedIn using OpenID Connect** (grants `openid`, `profile`, `email`)
+   Both are usually approved instantly.
 6. Go to the **Auth** tab:
    - Note your **Client ID** and **Client Secret**
    - Under **OAuth 2.0 settings**, add redirect URL: `http://localhost:8080/`

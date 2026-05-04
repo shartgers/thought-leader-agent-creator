@@ -65,7 +65,7 @@ def get_service():
                 print("ERROR: credentials.json not found. Run setup skill first.")
                 return None
             flow = InstalledAppFlow.from_client_secrets_file(_CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=OAUTH_PORT, prompt='consent', open_browser=False)
+            creds = flow.run_local_server(port=OAUTH_PORT, prompt='consent', open_browser=True)
 
         with open(_TOKEN_PATH, 'w') as token:
             token.write(creds.to_json())

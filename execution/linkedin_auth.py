@@ -59,7 +59,7 @@ def run():
         "?response_type=code"
         f"&client_id={client_id}"
         "&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2F"
-        "&scope=w_member_social"
+        "&scope=openid%20profile%20w_member_social"
     )
 
     print("Opening browser for LinkedIn authorization...")
@@ -90,9 +90,10 @@ def run():
         print(f"ERROR: Token exchange failed ({resp.status_code}): {resp.text}")
         sys.exit(1)
 
-    access_token = resp.json().get('access_token')
+    token_data = resp.json()
+    access_token = token_data.get('access_token')
     if not access_token:
-        print(f"ERROR: No access_token in response: {resp.json()}")
+        print(f"ERROR: No access_token in response: {token_data}")
         sys.exit(1)
 
     if not os.path.exists(_ENV_PATH):
@@ -100,19 +101,22 @@ def run():
     set_key(_ENV_PATH, 'LINKEDIN_ACCESS_TOKEN', access_token)
     print("LINKEDIN_ACCESS_TOKEN saved to .env")
 
-    # Fetch person ID
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'X-Restli-Protocol-Version': '2.0.0',
-    }
-    r = requests.get('https://api.linkedin.com/v2/me', headers=headers)
-    if r.status_code == 200:
-        person_id = r.json().get('id')
-    elif r.status_code == 403:
-        r2 = requests.get('https://api.linkedin.com/v2/userinfo', headers=headers)
-        person_id = r2.json().get('sub') if r2.status_code == 200 else None
-    else:
-        person_id = None
+    # Extract person ID from id_token JWT (no extra API call needed)
+    person_id = None
+    id_token = token_data.get('id_token')
+    if id_token:
+        import base64, json as _json
+        payload = id_token.split('.')[1]
+        payload += '=' * (-len(payload) % 4)
+        claims = _json.loads(base64.urlsafe_b64decode(payload))
+        person_id = claims.get('sub')
+
+    # Fallback: try userinfo endpoint
+    if not person_id:
+        headers = {'Authorization': f'Bearer {access_token}'}
+        r = requests.get('https://api.linkedin.com/v2/userinfo', headers=headers)
+        if r.status_code == 200:
+            person_id = r.json().get('sub')
 
     if person_id:
         set_key(_ENV_PATH, 'LINKEDIN_PERSON_URN', str(person_id))
