@@ -43,6 +43,10 @@ Draft creation (`create-articles`): you write drafts in-session using `build_sys
 - `config/themes.yaml` — your 3 content themes (set during setup)
 - `config/profile.yaml` — your name, role, LinkedIn URN (set during setup)
 
+## Routines & Scheduling
+
+When creating any routine or scheduled task (e.g. via `/schedule`), always use cloud-based remote agents. Never create locally-running session loops. Do not ask the user to choose — go straight to cloud.
+
 ## Status Workflow
 
 `new → review → ready → posted`

@@ -61,11 +61,17 @@ print('Scheduled Row <row_number> for <date>')
 "
 ```
 
-## Step 5: Set Up Daily CronCreate Routine
+## Step 5: Set Up Daily Cloud Routine
 
-Check if a daily cron routine already exists (via CronList). If one is already active: tell the colleague and offer to show the schedule or remove it.
+Check if a cloud routine already exists:
 
-If no routine exists, build the prompt first, then call CronCreate.
+```
+RemoteTrigger({"action": "list"})
+```
+
+Scan the returned triggers for one whose name contains "LinkedIn Auto-Publisher". If one is already active: tell the colleague, show its claude.ai URL, and offer to remove it.
+
+If no routine exists, build the prompt first, then create the cloud routine.
 
 ### Building the routine prompt
 
@@ -113,26 +119,40 @@ Report the script's full stdout output. If the script exits with a non-zero code
 
 ---
 
-### Calling CronCreate
+### Creating the cloud routine
 
-- **Schedule:** daily at 08:15 Europe/Amsterdam (IANA zone `Europe/Amsterdam` handles DST automatically — no need to adjust for CET/CEST)
-- **Prompt:** the full text built above
+Call RemoteTrigger with action `"create"` and this body:
+
+```json
+{
+  "name": "LinkedIn Auto-Publisher — [NAME] at [COMPANY]",
+  "prompt": "<full routine prompt built above>",
+  "schedule": "15 8 * * *",
+  "timezone": "Europe/Amsterdam"
+}
+```
+
+- **Schedule:** `15 8 * * *` = 08:15 daily in `Europe/Amsterdam` (handles CET/CEST automatically)
 - **No MCP connectors** (Python scripts use embedded credentials)
 
-The routine runs every day. The script itself checks whether a post is scheduled for that day — if none is found it exits cleanly with "No post scheduled for today". This means the posting frequency (2× or 3× per week) is controlled by the dates written to the sheet, not by the cron cadence.
+After creating, relay the server-confirmed run time and the claude.ai routine URL to the colleague so they can verify the schedule and bookmark the result page.
 
-If a routine already exists: tell the colleague it's already active. Offer to show the schedule or remove it.
+The routine runs every day in the cloud — no session needs to be open. The script itself checks whether a post is scheduled for that day; if none is found it exits cleanly with "No post scheduled for today". Posting frequency is controlled by the dates written to the sheet, not the cron cadence.
 
 ## Step 6: Confirm
 
 > "Schedule saved. Posts are queued for:
 > [list the dates]
 >
-> The daily routine will check at 08:15 and publish automatically.
-> You'll need to be logged in to Claude Code for the routine to run.
+> The daily cloud routine will check at 08:15 Amsterdam time and publish automatically — no session needs to be open.
+> You can view the routine and its run history at: [claude.ai routine URL]
 >
 > To add more articles to the schedule later, just run `/schedule` again after approving new drafts."
 
 ## Removing the Routine
 
-If the colleague asks to remove the auto-publish routine, use CronDelete to remove it and confirm.
+If the colleague asks to remove the auto-publish routine:
+
+1. Call `RemoteTrigger({"action": "list"})` to find the trigger ID
+2. Call `RemoteTrigger({"action": "update", "trigger_id": "<id>", "body": {"enabled": false}})` to disable it
+3. Confirm to the colleague that the routine has been disabled
