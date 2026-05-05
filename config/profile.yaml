@@ -7,3 +7,5 @@ industry: ""
 linkedin_urn: ""        # numeric person ID (e.g. 12345678), NOT the full URN
 preferred_post_time: "08:30"
 timezone: "Europe/Amsterdam"
+# Set to false if you get SSL errors (corporate proxy with self-signed cert)
+ssl_verify: true

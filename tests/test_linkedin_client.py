@@ -14,21 +14,46 @@ def test_build_post_text_no_title():
 
 
 def test_urn_to_url():
-    urn = 'urn:li:ugcPost:7123456789'
+    urn = 'urn:li:share:7123456789'
     url = linkedin_client.urn_to_url(urn)
-    assert url == 'https://www.linkedin.com/feed/update/urn:li:ugcPost:7123456789/'
+    assert url == 'https://www.linkedin.com/feed/update/urn:li:share:7123456789/'
 
 
 def test_post_text_success():
     mock_response = MagicMock()
     mock_response.status_code = 201
-    mock_response.headers = {'x-restli-id': 'urn:li:ugcPost:9999'}
+    mock_response.headers = {'x-restli-id': 'urn:li:share:9999'}
 
     with patch('execution.linkedin_client.requests.post', return_value=mock_response), \
          patch('execution.linkedin_client.ACCESS_TOKEN', 'fake-token'), \
-         patch('execution.linkedin_client.PERSON_URN', '12345678'):
+         patch('execution.linkedin_client.PERSON_URN', '12345678'), \
+         patch('execution.linkedin_client._get_ssl_verify', return_value=True):
         result = linkedin_client.post_text('Hello LinkedIn!')
-    assert result == 'urn:li:ugcPost:9999'
+    assert result == 'urn:li:share:9999'
+
+
+def test_check_connectivity_allowlist_blocked():
+    mock_response = MagicMock()
+    mock_response.status_code = 403
+    mock_response.text = 'Host not in allowlist'
+
+    with patch('execution.linkedin_client.requests.get', return_value=mock_response), \
+         patch('execution.linkedin_client.ACCESS_TOKEN', 'fake-token'), \
+         patch('execution.linkedin_client._get_ssl_verify', return_value=True):
+        result = linkedin_client.check_connectivity()
+    assert result is False
+
+
+def test_check_connectivity_ok():
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.text = '{}'
+
+    with patch('execution.linkedin_client.requests.get', return_value=mock_response), \
+         patch('execution.linkedin_client.ACCESS_TOKEN', 'fake-token'), \
+         patch('execution.linkedin_client._get_ssl_verify', return_value=True):
+        result = linkedin_client.check_connectivity()
+    assert result is True
 
 
 def test_post_text_failure_returns_none():
