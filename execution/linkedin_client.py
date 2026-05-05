@@ -14,7 +14,7 @@ load_dotenv()
 
 ACCESS_TOKEN = os.getenv('LINKEDIN_ACCESS_TOKEN')
 PERSON_URN = os.getenv('LINKEDIN_PERSON_URN')
-LINKEDIN_API_VERSION = os.getenv('LINKEDIN_API_VERSION', '202408')
+_LINKEDIN_API_VERSION = '202601'
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _PROFILE_PATH = os.path.join(_REPO_ROOT, 'config', 'profile.yaml')
@@ -84,7 +84,7 @@ def post_text(text):
     headers = {
         'Authorization': f'Bearer {ACCESS_TOKEN}',
         'Content-Type': 'application/json',
-        'LinkedIn-Version': LINKEDIN_API_VERSION,
+        'LinkedIn-Version': _LINKEDIN_API_VERSION,
         'X-Restli-Protocol-Version': '2.0.0',
     }
 
