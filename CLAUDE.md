@@ -1,6 +1,6 @@
-# LinkedIn Thought Leader Agent
+# linkedin-publish-agent
 
-This repo helps you consistently publish LinkedIn thought leadership articles.
+This repo supports Xomnia thought leaders who want to automate the creation and publication of articles on LinkedIn.
 It uses Claude skills + Python execution scripts + Google Sheets.
 
 ## First time? Run the setup skill
@@ -34,6 +34,8 @@ The `review → ready` status change in Google Sheets is intentionally manual. N
 
 Python scripts in `execution/` are the deterministic layer. Skills call them.
 Do not modify them to bypass workflow gates.
+
+Draft creation (`create-articles`): you write drafts in-session using `build_system_prompt` rules, then `save_review_draft()` writes the sheet. `CLAUDE_API_KEY` is only for optional `generate_draft()` calls from Python.
 
 ## Config
 

@@ -30,6 +30,13 @@ The create-articles skill injects this entire file into the article generation p
 - Lists of 5+ bullet points (write in prose)
 - Marketing fluff or generic AI-sounding sentences
 - Hedging: "might", "could potentially", "in some ways"
+- Never use the hyphen/dash construct as part of a sentence to emphasize what's coming (e.g. "— like this" or "sentence — sentence"). It reads as AI-generated and is not natural in Dutch professional writing context. You can use a hyphen in connecting words together, such as "human-AI collaboration"
+
+## Hashtags
+
+- Always end the post with 5-7 relevant hashtags on their own line.
+- Use Dutch and English hashtags as appropriate for the audience.
+- Example: `#AI #AgenticOrganisation #FutureOfWork #DataScience #DigitalTransformation #MachineLearning`
 
 ---
 

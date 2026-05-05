@@ -1800,8 +1800,8 @@ A Claude-powered pipeline for publishing consistent LinkedIn thought leadership 
 
 ```bash
 # 1. Clone the repo
-git clone <repo-url>
-cd thought-leader-agent
+git clone https://github.com/shartgers/linkedin-publish-agent.git
+cd linkedin-publish-agent
 
 # 2. Install Python dependencies
 python -m venv .venv

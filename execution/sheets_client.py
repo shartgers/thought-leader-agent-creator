@@ -7,7 +7,10 @@ Tab name: "LinkedIn Posts"
 """
 
 import os
+import yaml
 from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
+import requests as _requests
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
@@ -18,9 +21,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+_TZ = ZoneInfo('Europe/Amsterdam')
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _TOKEN_PATH = os.path.join(_REPO_ROOT, 'token.json')
 _CREDENTIALS_PATH = os.path.join(_REPO_ROOT, 'credentials.json')
+_PROFILE_PATH = os.path.join(_REPO_ROOT, 'config', 'profile.yaml')
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 SPREADSHEET_ID = os.getenv('GOOGLE_SHEET_ID')
@@ -30,6 +35,16 @@ POSTS_COLUMNS = [
     'source', 'about', 'title', 'text', 'image_prompt', 'status',
     'scheduled_date', 'date_added', 'date_textgen', 'published_url', 'date_posted',
 ]
+
+
+def _get_ssl_verify():
+    """Read ssl_verify from config/profile.yaml. Defaults to True (safe)."""
+    try:
+        with open(_PROFILE_PATH) as f:
+            profile = yaml.safe_load(f) or {}
+        return profile.get('ssl_verify', True)
+    except Exception:
+        return True
 
 
 def _col_index_to_letter(n):
@@ -45,6 +60,7 @@ def _col_index_to_letter(n):
 
 def get_service():
     """Authenticates and returns a Google Sheets API service instance."""
+    ssl_verify = _get_ssl_verify()
     creds = None
     if os.path.exists(_TOKEN_PATH):
         creds = Credentials.from_authorized_user_file(_TOKEN_PATH, SCOPES)
@@ -52,7 +68,12 @@ def get_service():
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:
-                creds.refresh(Request())
+                if not ssl_verify:
+                    session = _requests.Session()
+                    session.verify = False
+                    creds.refresh(Request(session=session))
+                else:
+                    creds.refresh(Request())
             except RefreshError:
                 print("WARNING: OAuth token expired. Re-authenticating.")
                 os.remove(_TOKEN_PATH)
@@ -63,12 +84,18 @@ def get_service():
                 print("ERROR: credentials.json not found. Run setup skill first.")
                 return None
             flow = InstalledAppFlow.from_client_secrets_file(_CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=OAUTH_PORT, prompt='consent', open_browser=False)
+            creds = flow.run_local_server(port=OAUTH_PORT, prompt='consent', open_browser=True)
 
         with open(_TOKEN_PATH, 'w') as token:
             token.write(creds.to_json())
 
     try:
+        if not ssl_verify:
+            import httplib2
+            from google_auth_httplib2 import AuthorizedHttp
+            _http = httplib2.Http(disable_ssl_certificate_validation=True)
+            _http_auth = AuthorizedHttp(creds, http=_http)
+            return build('sheets', 'v4', http=_http_auth)
         return build('sheets', 'v4', credentials=creds)
     except HttpError as err:
         print(f"ERROR: Failed to build Sheets service: {err}")
@@ -200,7 +227,7 @@ def get_today_scheduled_post():
     Returns the single row with scheduled_date == today and status == 'ready'.
     Returns None if no such row exists.
     """
-    today = date.today().isoformat()
+    today = datetime.now(_TZ).date().isoformat()
     rows = get_rows('LinkedIn Posts', status_filter='ready')
     for row in rows:
         if row.get('scheduled_date', '').strip() == today:
@@ -214,7 +241,7 @@ def get_schedule(days=14):
     schedule_slots: list of {date, weekday, post} dicts
     unscheduled_ready: list of ready rows with no scheduled_date
     """
-    today = date.today()
+    today = datetime.now(_TZ).date()
     rows = get_rows('LinkedIn Posts')
 
     scheduled_by_date = {}

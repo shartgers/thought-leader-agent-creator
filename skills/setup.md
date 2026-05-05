@@ -5,12 +5,12 @@ description: One-time onboarding for the LinkedIn Thought Leader Agent at Xomnia
 
 # Setup — LinkedIn Thought Leader Agent at Xomnia
 
-Guide the colleague through full onboarding. Follow every step in order. Do not skip steps.
+Guide the Xomnia thought leader through full onboarding. Follow every step in order. Do not skip steps.
 
 ## Step 1: Welcome
 
-Introduce yourself:
-> "Welcome to the LinkedIn Thought Leader Agent at Xomnia! I'll walk you through setup — it takes about 15 minutes. By the end, you'll have your profile configured, 3 content themes locked in, and your Google Sheet and LinkedIn account connected so you can start publishing consistently."
+Introduce yourself briefly:
+> "Welcome to the LinkedIn Thought Leader Agent provided by Xomnia — your personal content engine for building a strong professional presence on LinkedIn. This agent helps you as a thought leader to share your expertise consistently and efficiently. I'll walk you through setup — it takes about 10–15 minutes. By the end, you'll have your profile configured, 3 content themes locked in, and your Google Sheet and LinkedIn account connected."
 
 ## Step 2: Collect Profile Info
 
@@ -27,6 +27,8 @@ industry: "Data & AI Consultancy"
 linkedin_urn: ""
 preferred_post_time: "08:30"
 timezone: "Europe/Amsterdam"
+# Set to false if you get SSL errors (corporate proxy with self-signed cert)
+ssl_verify: true
 ```
 
 ## Step 3: Define 3 Content Themes
@@ -35,8 +37,8 @@ Explain:
 > "Consistent thought leaders own 2-3 specific topics. I'll suggest themes based on your role — you refine them."
 
 Suggest 3 themes based on their role. For example:
-- Data scientist → "AI in practice", "Data-driven decisions", "ML engineering lessons"
-- Consultant → "Digital transformation", "AI adoption", "Tech leadership"
+- Data engineer → "Data platform architecture", "The reality of production ML", "Career growth in data"
+- AI consultant → "AI adoption lessons", "Responsible AI in practice", "From prototype to production"
 
 Agree on 3 themes, then write to `config/themes.yaml`:
 ```yaml
@@ -74,61 +76,100 @@ Check if `credentials.json` exists in the repo root.
 
 1. Go to https://console.cloud.google.com → create a new project
 2. Enable **Google Sheets API** and **Google Drive API**
-3. Go to **APIs & Services → OAuth consent screen**:
-   - Set User Type to **External**, click **Create**
-   - Fill in **App name** (e.g., "Xomnia Thought Leader Agent") and your **support email**
-   - Save and continue through the scopes screen (no changes needed)
-   - On the **Audience** tab: publishing status stays **Testing**
-   - Under **Test users** → click **Add users** → add your Google account email → Save
+3. Set up the **OAuth consent screen**:
+   - Go to **APIs & Services → OAuth consent screen**
+   - Under **Audience**, select **External**
+   - Fill in the **App name** (e.g., "LinkedIn Publish Agent") and your **support email address**
+   - Click through the remaining sections (Scopes, Optional Info) without changes and save
+   - Under **Audience → Test users**, click **Add users** and add your Google account email
 4. Go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**
-5. Choose **Desktop app**, download the JSON file, save it as `credentials.json` in the repo root
+5. Choose **Desktop app**, download the JSON file
+6. Save it as `credentials.json` in the repo root
 
-Once `credentials.json` is in place, run the Google authentication directly:
+Once `credentials.json` is saved, run the Google authentication directly using the Bash tool:
+```
+python execution/sheets_client.py
+```
+Use system Python from the repo root — no virtual environment needed for this step.
 
-**Windows**: `.venv\Scripts\python -c "from execution.sheets_client import get_service; get_service()"`
-**Mac/Linux**: `.venv/bin/python -c "from execution.sheets_client import get_service; get_service()"`
-
-This opens a browser. When the colleague sees **"Google hasn't verified this app"**, tell them to click **"Proceed"** (Dutch: "Doorgaan") to continue. This completes OAuth and creates `token.json`.
+This opens a browser window. When you see **"Google hasn't verified this app"**, click **"Proceed"** (Dutch: "Doorgaan") to continue. This completes the OAuth flow and creates `token.json`.
 
 **If `credentials.json` already exists**: confirm it belongs to the colleague before proceeding.
 
 ## Step 6: Google Sheet Setup
 
-Using the Google Drive MCP, create a new Google Sheet:
-- Name: `LinkedIn Posts`
-- Add a tab called `LinkedIn Posts` with these headers in row 1 (exact order):
-  `source, about, title, text, image_prompt, status, scheduled_date, date_added, date_textgen, published_url, date_posted`
+First write a placeholder to `.env` so the import doesn't fail:
+```
+GOOGLE_SHEET_ID=placeholder
+```
 
-Share the sheet URL with the colleague, then:
-1. Extract the Sheet ID from the URL (the part between `/d/` and `/edit`)
-2. Write `GOOGLE_SHEET_ID=<id>` to `.env`
+Then run this Python snippet via the Bash tool to create the sheet under the same Google account as the OAuth token:
 
-Confirm the sheet is reachable before continuing.
+```python
+python -c "
+import sys; sys.path.insert(0, '.')
+from execution.sheets_client import get_service
+
+HEADERS = ['source','about','title','text','image_prompt','status','scheduled_date',
+           'date_added','date_textgen','published_url','date_posted']
+
+svc = get_service()
+body = {
+    'properties': {'title': 'LinkedIn Posts'},
+    'sheets': [{'properties': {'title': 'LinkedIn Posts'}}]
+}
+result = svc.spreadsheets().create(body=body).execute()
+sheet_id = result['spreadsheetId']
+print('Sheet ID:', sheet_id)
+print('URL:', result['spreadsheetUrl'])
+
+svc.spreadsheets().values().update(
+    spreadsheetId=sheet_id,
+    range=\"'LinkedIn Posts'!A1\",
+    valueInputOption='RAW',
+    body={'values': [HEADERS]}
+).execute()
+print('Headers written.')
+"
+```
+
+Copy the printed Sheet ID and update `.env`:
+```
+GOOGLE_SHEET_ID=<id from output>
+```
+
+Share the sheet URL with the colleague so they can bookmark it.
 
 ## Step 7: LinkedIn Setup
 
-### 7a — Create a LinkedIn Company Page
+**If either credential is missing**, walk through in this order:
 
-The colleague needs a LinkedIn Company Page to register the developer app. If they don't have one yet:
+### 7a. Create a LinkedIn Company Page (required for the developer app)
 
+> "LinkedIn requires a Company Page to create a developer app. Let's create one for you now."
+
+Guide the colleague to:
 1. Go to https://www.linkedin.com/company/setup/new/
-2. Choose **Company** page type
-3. Fill in: company name, LinkedIn URL slug, website, industry (IT Services and IT Consulting), company size, organization type
+2. Choose **Company** as the page type
+3. Fill in name, LinkedIn URL, industry, size, and type
 4. Click **Create page**
+5. Note the page URL (e.g., `https://www.linkedin.com/company/xomnia/`) — needed in the next step
 
-Copy the company page URL (e.g., `https://www.linkedin.com/company/xomnia/`) — it's needed in the next step.
-
-### 7b — Create a LinkedIn Developer App
+### 7b. Create the LinkedIn Developer App
 
 1. Go to https://www.linkedin.com/developers/apps/new
-2. Fill in:
-   - **App name**: `Xomnia Thought Leader Agent`
-   - **LinkedIn Page**: paste the company page URL from above
-3. Under **Products**, request **Share on LinkedIn** (grants `w_member_social`)
-4. Under **Auth**, add redirect URL: `http://localhost:8080/`
-5. From the **Auth** tab, copy the **Client ID** and **Client Secret**
+2. **App name**: `Xomnia Publish Agent` (LinkedIn does not allow the word "LinkedIn" in app names)
+3. **LinkedIn Page**: paste the company page URL from step 7a (or type to search by name)
+4. Accept the terms and click **Create app**
+5. Go to the **Products** tab → request both:
+   - **Share on LinkedIn** (grants `w_member_social`)
+   - **Sign In with LinkedIn using OpenID Connect** (grants `openid`, `profile`, `email`)
+   Both are usually approved instantly.
+6. Go to the **Auth** tab:
+   - Note your **Client ID** and **Client Secret**
+   - Under **OAuth 2.0 settings**, add redirect URL: `http://localhost:8080/`
 
-### 7c — Run LinkedIn Authorization
+### 7c. Save credentials and authenticate
 
 Ask the colleague to add to their `.env` file:
 ```
@@ -136,12 +177,12 @@ LINKEDIN_CLIENT_ID=<client_id>
 LINKEDIN_CLIENT_SECRET=<client_secret>
 ```
 
-Once confirmed, run the LinkedIn OAuth flow directly:
+Once confirmed, run the LinkedIn OAuth flow directly using the Bash tool:
+```
+python execution/linkedin_auth.py
+```
 
-**Windows**: `.venv\Scripts\python execution/linkedin_auth.py`
-**Mac/Linux**: `.venv/bin/python execution/linkedin_auth.py`
-
-This opens a browser, the colleague authorizes the app, and the script saves `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN` to `.env` automatically.
+This opens a browser, completes the OAuth flow, and automatically saves `LINKEDIN_ACCESS_TOKEN` and `LINKEDIN_PERSON_URN` to `.env`.
 
 ## Step 8: Confirm Setup Complete
 

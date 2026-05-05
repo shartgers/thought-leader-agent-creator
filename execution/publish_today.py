@@ -11,19 +11,25 @@ Usage:
 
 import sys
 import argparse
-from datetime import datetime, date
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+_TZ = ZoneInfo('Europe/Amsterdam')
 
 sys.path.insert(0, '.')
 
 from execution.sheets_client import get_today_scheduled_post, update_row
-from execution.linkedin_client import post_text, build_post_text, urn_to_url
+from execution.linkedin_client import post_text, build_post_text, urn_to_url, check_connectivity
 
 
 def publish_today(dry_run=False):
-    now = datetime.now()
-    print(f"\n[{now.strftime('%Y-%m-%d %H:%M:%S')}] publish_today starting")
-    print(f"  Date : {date.today().isoformat()}")
+    now = datetime.now(_TZ)
+    print(f"\n[{now.strftime('%Y-%m-%d %H:%M:%S %Z')}] publish_today starting")
+    print(f"  Date : {now.date().isoformat()}")
     print(f"  Mode : {'DRY RUN' if dry_run else 'LIVE'}")
+
+    if not dry_run and not check_connectivity():
+        return False
 
     post = get_today_scheduled_post()
 
