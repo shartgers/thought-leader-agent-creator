@@ -1,0 +1,9 @@
+# Content themes — set by the setup skill during onboarding.
+# Edit directly or re-run /setup to update.
+themes:
+  - name: "AI in the real world"
+    description: "What it actually takes to move AI from hype to production in enterprises. Lessons from the field: what works, what fails, and how to cut through the noise."
+  - name: "The Agentic Organisation"
+    description: "Insights from Stephan's book (out May 2025): how AI agents are reshaping organisations, the shift from managing people to governing AI ecosystems, and a practical roadmap for leaders navigating this transformation."
+  - name: "The future of work with AI"
+    description: "How AI is reshaping teams, roles, and careers — and what leaders need to do right now to stay ahead of the curve."
