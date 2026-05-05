@@ -54,19 +54,12 @@ themes:
 Then say:
 > "Your `config/brand_voice.md` has a default writing style template. Review it and edit it to match how you actually write. The better it describes your voice, the better your drafts will be."
 
-## Step 4: Python Environment Setup
+## Step 4: Install Python Dependencies
 
-Check if `.venv` exists in the repo root. If it does NOT exist, run:
-
+Run from the repo root:
 ```
-python -m venv .venv
+pip install -r requirements.txt
 ```
-
-Then install dependencies:
-- **Windows**: `.venv\Scripts\pip install -r requirements.txt`
-- **Mac/Linux**: `.venv/bin/pip install -r requirements.txt`
-
-All subsequent Python script runs in this setup use `.venv\Scripts\python` (Windows) or `.venv/bin/python` (Mac/Linux).
 
 ## Step 5: Google Cloud Setup
 
@@ -190,7 +183,7 @@ Verify:
 - [ ] `config/profile.yaml` written
 - [ ] `config/themes.yaml` written
 - [ ] `config/brand_voice.md` reviewed
-- [ ] `.venv` created and dependencies installed
+- [ ] Dependencies installed (`pip install -r requirements.txt`)
 - [ ] `credentials.json` present and `token.json` generated
 - [ ] `GOOGLE_SHEET_ID` in `.env`
 - [ ] `LINKEDIN_ACCESS_TOKEN` in `.env`
